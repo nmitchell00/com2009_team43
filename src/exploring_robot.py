@@ -5,6 +5,7 @@ from sensor_msgs.msg import LaserScan
 
 import rospy
 import actionlib
+import numpy as np
 
 from move_tb3 import MoveTB3
 from math import degrees
@@ -16,11 +17,13 @@ class ExploringRobot(object):
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         rospy.init_node('odom_node', anonymous=True)
         self.rate = rospy.Rate(10) # hz
+        self.lidar_subscriber = rospy.Subscriber('/scan', LaserScan, self.callback_lidar)
 
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
 
         rospy.loginfo("publisher node is active...")
+
 
     def shutdownhook(self):
         self.shutdown_function()
@@ -30,40 +33,75 @@ class ExploringRobot(object):
         print("stopping publisher node at: {}".format(rospy.get_time()))
 
     def main_loop(self):
-        self.turn_left()
-        self.turn_right()
-
+        #self.turn_left(3)
+        #self.turn_right(3)
+        self.move_forward(3)
+        #self.move_backwards(3)
+        #print(object_distance)
         #self.robot_controller = MoveTB3()
 
-    def turn_left(self):
+    def turn_left(self, time):
         i = 0
-        for i in range(3):
+        for i in range(time):
             vel_cmd = Twist()
-            vel_cmd.angular.z = 0.8
-
+            vel_cmd.angular.z = 0.5
             self.pub.publish(vel_cmd)
 
-            rospy.sleep(3)
-            print("looped " + str(i))
+            rospy.sleep(1)
             i=+1
 
         vel_cmd.angular.z = 0.0
         self.pub.publish(vel_cmd)
 
-    def turn_right(self):
+    def turn_right(self, time):
         i = 0
-        for i in range(3):
+        for i in range(time):
             vel_cmd = Twist()
-            vel_cmd.angular.z = -0.8
+            vel_cmd.angular.z = -0.5
 
             self.pub.publish(vel_cmd)
 
-            rospy.sleep(3)
-            print("looped " + str(i))
+            rospy.sleep(1)
             i=+1
 
         vel_cmd.angular.z = 0.0
         self.pub.publish(vel_cmd)
+
+    def move_forward(self, time):
+        i = 0
+        for i in range(time):
+            vel_cmd = Twist()
+            vel_cmd.linear.x = 0.3
+
+            self.pub.publish(vel_cmd)
+
+            rospy.sleep(1)
+            i=+1
+
+        vel_cmd.linear.x = 0.0
+        self.pub.publish(vel_cmd)
+
+    def move_backwards(self, time):
+        i = 0
+        for i in range(time):
+            vel_cmd = Twist()
+            vel_cmd.linear.x = -0.3
+
+            self.pub.publish(vel_cmd)
+
+            rospy.sleep(1)
+            i=+1
+
+        vel_cmd.linear.x = 0.0
+        self.pub.publish(vel_cmd)
+
+    def callback_lidar(self, lidar_data):
+        print("test")
+        left_arc = lidar_data.ranges[0:10]
+        right_arc = lidar_data.ranges[-10:]
+        front_arc = np.array(left_arc + right_arc)
+        # find the miniumum object distance within the frontal laserscan arc:
+        self.object_distance = front_arc.min()
 
 if __name__ == '__main__':
     publisher_instance = ExploringRobot()
