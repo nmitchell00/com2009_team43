@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="team43" type="exploring_robot.py" name="exploring_robot" output="screen">
+  </node>
+
+</launch>
