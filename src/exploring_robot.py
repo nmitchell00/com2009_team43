@@ -42,8 +42,8 @@ class ExploringRobot(object):
     def main_loop(self):
         vel_cmd = Twist()
         while not self.ctrl_c:
-            if self.object_distance > 0.4:
-                vel_cmd.linear.x = 0.3
+            if self.object_distance > 0.35:
+                vel_cmd.linear.x = 0.2
                 vel_cmd.angular.z = 0.0
                 print("moving forward")
                 self.pub.publish(vel_cmd)
@@ -127,13 +127,13 @@ class ExploringRobot(object):
         # find the miniumum object distance within the frontal laserscan arc:
         self.object_distance = front_arc.min()
 
-        left_arc = lidar_data.ranges[20:40]
-        right_arc = lidar_data.ranges[40:60]
+        left_arc = lidar_data.ranges[30:50]
+        right_arc = lidar_data.ranges[50:70]
         total_arc1 = np.array(left_arc + right_arc)
         self.distance_left = total_arc1.min()
 
-        left_arc = lidar_data.ranges[-60:-40]
-        right_arc = lidar_data.ranges[-40:-20]
+        left_arc = lidar_data.ranges[-70:-50]
+        right_arc = lidar_data.ranges[-50:-30]
         total_arc2 = np.array(left_arc + right_arc)
         self.distance_right = total_arc2.min()
         #print(self.object_distance)
