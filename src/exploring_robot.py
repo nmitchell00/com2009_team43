@@ -16,7 +16,7 @@ class ExploringRobot(object):
     def __init__(self):
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         rospy.init_node('odom_node', anonymous=True)
-        self.rate = rospy.Rate(5) # hz
+        self.rate = rospy.Rate(10) # hz
         self.lidar_subscriber = rospy.Subscriber('/scan', LaserScan, self.callback_lidar)
         self.object_distance = 1
         self.distance_right = 1
@@ -42,9 +42,9 @@ class ExploringRobot(object):
     def main_loop(self):
         vel_cmd = Twist()
         while not self.ctrl_c:
-            if self.object_distance > 0.35:
-                vel_cmd.linear.x = 0.2
-                vel_cmd.angular.z = 0.0
+            if self.object_distance > 0.38:
+                vel_cmd.linear.x = 0.3
+                vel_cmd.angular.z = 0.02
                 print("moving forward")
                 self.pub.publish(vel_cmd)
             elif self.distance_right > self.distance_left :
@@ -57,13 +57,31 @@ class ExploringRobot(object):
                 vel_cmd.angular.z = 0.5
                 print("turning left")
                 self.pub.publish(vel_cmd)
-                
+
         #self.turn_left(3)
         #self.turn_right(3)
         #self.move_forward(3)
         #self.move_backwards(3)
         #print(object_distance)
         #self.robot_controller = MoveTB3()
+
+    def callback_lidar(self, lidar_data):
+        left_arc = lidar_data.ranges[0:50]
+        right_arc = lidar_data.ranges[-50:]
+        front_arc = np.array(left_arc + right_arc)
+        # find the miniumum object distance within the frontal laserscan arc:
+        self.object_distance = front_arc.min()
+
+        left_arc = lidar_data.ranges[30:50]
+        right_arc = lidar_data.ranges[50:70]
+        total_arc1 = np.array(left_arc + right_arc)
+        self.distance_left = total_arc1.min()
+
+        left_arc = lidar_data.ranges[290:310]
+        right_arc = lidar_data.ranges[310:330]
+        total_arc2 = np.array(left_arc + right_arc)
+        self.distance_right = total_arc2.min()
+
 
     def turn_left(self, time):
         i = 0
@@ -120,23 +138,7 @@ class ExploringRobot(object):
         vel_cmd.linear.x = 0.0
         self.pub.publish(vel_cmd)
 
-    def callback_lidar(self, lidar_data):
-        left_arc = lidar_data.ranges[0:50]
-        right_arc = lidar_data.ranges[-50:]
-        front_arc = np.array(left_arc + right_arc)
-        # find the miniumum object distance within the frontal laserscan arc:
-        self.object_distance = front_arc.min()
 
-        left_arc = lidar_data.ranges[30:50]
-        right_arc = lidar_data.ranges[50:70]
-        total_arc1 = np.array(left_arc + right_arc)
-        self.distance_left = total_arc1.min()
-
-        left_arc = lidar_data.ranges[-70:-50]
-        right_arc = lidar_data.ranges[-50:-30]
-        total_arc2 = np.array(left_arc + right_arc)
-        self.distance_right = total_arc2.min()
-        #print(self.object_distance)
 
 if __name__ == '__main__':
     publisher_instance = ExploringRobot()
