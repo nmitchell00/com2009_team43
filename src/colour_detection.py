@@ -108,9 +108,15 @@ class colour_detection(object):
         while not self.ctrl_c:
             while self.pillar_detection == False:
                 print("Happy Noises")
-                print("SEARCH INITIATED: The target colour is yellow")
-                self.search_colour = "yellow"
+                print("SEARCH INITIATED: The target colour is green")
+                self.search_colour = "green"
                 self.pillar_detection = True
+                # turn 90 degrees
+                # detect colour, declare correct colour in self.search_colour
+                # turn back 90 degrees
+                # move forward 0.75m (doesn't have to be exact)
+                # turn 90 degrees anti-clockwise
+                # declare self.pillar_detection = True
             while self.pillar_detection == True and not self.ctrl_c:
                 if self.m00 > self.m00_min:
                     # blob detected
