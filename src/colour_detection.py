@@ -13,15 +13,10 @@ from sensor_msgs.msg import Image
 # Import some other modules from within this package
 from move_tb3 import MoveTB3
 
-from geometry_msgs.msg import Twist
-
 class colour_detection(object):
 
     def __init__(self):
-        self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-        rospy.init_node('odom_node', anonymous=True)
-        self.rate = rospy.Rate(10) # hz
-        #rospy.init_node('turn_and_face')
+        rospy.init_node('turn_and_face')
         self.base_image_path = '/home/student/myrosdata/week6_images'
         self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw",
             Image, self.camera_callback)
@@ -48,13 +43,22 @@ class colour_detection(object):
     def shutdown_ops(self):
         self.robot_controller.stop()
         cv2.destroyAllWindows()
-        vel_cmd = Twist()
-        vel_cmd.linear.x = 0.0
-        vel_cmd.angular.z = 0.0
-        self.pub.publish(vel_cmd)
         self.ctrl_c = True
     
     def camera_callback(self, img_data):
+        try:
+            cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
+        except CvBridgeError as e:
+            print(e)
+        
+        height, width, channels = cv_img.shape
+        crop_width = width - 800
+        crop_height = 400
+        crop_x = int((width/2) - (crop_width/2))
+        crop_y = int((height/2) - (crop_height/2))
+
+        crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
 
         lowerblue = (115, 224, 100)
         upperblue = (130, 255, 255)
@@ -73,59 +77,39 @@ class colour_detection(object):
 
         loweryellow = (25,210,100)
         upperyellow = (32,255,255)
+
+        if self.search_colour == "blue":
+            mask = cv2.inRange(hsv_img, lowerblue, upperblue)
+        if self.search_colour == "red":
+            mask = cv2.inRange(hsv_img, lowerred, upperred)
+        if self.search_colour == "green":
+            mask = cv2.inRange(hsv_img, lowergreen, uppergreen)
+        if self.search_colour == "cyan":
+            mask = cv2.inRange(hsv_img, lowercyan, uppercyan)
+        if self.search_colour == "purple":
+            mask = cv2.inRange(hsv_img, lowerpurple, upperpurple)
+        if self.search_colour == "yellow":
+            mask = cv2.inRange(hsv_img, loweryellow, upperyellow)
+
         
-        while self.pillar_detection:
+        #mask = cv2.inRange(hsv_img, lowercyan, uppercyan) + cv2.inRange(hsv_img, lowerred, upperred) + cv2.inRange(hsv_img, lowergreen, uppergreen) + cv2.inRange(hsv_img, lowerblue, upperblue)
+        res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
 
-            try:
-                cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
-            except CvBridgeError as e:
-                print(e)
-            
-            height, width, channels = cv_img.shape
-            crop_width = width - 800
-            crop_height = 400
-            crop_x = int((width/2) - (crop_width/2))
-            crop_y = int((height/2) - (crop_height/2))
+        m = cv2.moments(mask)
+        self.m00 = m['m00']
+        self.cy = m['m10'] / (m['m00'] + 1e-5)
 
-            crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
-            hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
-
-            if self.search_colour == "blue":
-                mask = cv2.inRange(hsv_img, lowerblue, upperblue)
-            if self.search_colour == "red":
-                mask = cv2.inRange(hsv_img, lowerred, upperred)
-            if self.search_colour == "green":
-                mask = cv2.inRange(hsv_img, lowergreen, uppergreen)
-            if self.search_colour == "cyan":
-                mask = cv2.inRange(hsv_img, lowercyan, uppercyan)
-            if self.search_colour == "purple":
-                mask = cv2.inRange(hsv_img, lowerpurple, upperpurple)
-            if self.search_colour == "yellow":
-                mask = cv2.inRange(hsv_img, loweryellow, upperyellow)
-
-            
-            #mask = cv2.inRange(hsv_img, lowercyan, uppercyan) + cv2.inRange(hsv_img, lowerred, upperred) + cv2.inRange(hsv_img, lowergreen, uppergreen) + cv2.inRange(hsv_img, lowerblue, upperblue)
-            res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
-
-            m = cv2.moments(mask)
-            self.m00 = m['m00']
-            self.cy = m['m10'] / (m['m00'] + 1e-5)
-
-            if self.m00 > self.m00_min:
-                cv2.circle(crop_img, (int(self.cy), 200), 10, (0, 0, 255), 2)
-            
-            cv2.imshow('cropped image', crop_img)
-            cv2.waitKey(1)
+        if self.m00 > self.m00_min:
+            cv2.circle(crop_img, (int(self.cy), 200), 10, (0, 0, 255), 2)
+        
+        cv2.imshow('cropped image', crop_img)
+        cv2.waitKey(1)
 
     def main(self):
-        vel_cmd = Twist()
-
         while not self.ctrl_c:
-            while self.pillar_detection == False and not self.ctrl_c:
-
-
+            while self.pillar_detection == False:
                 print("Happy Noises")
-
+                
                 i = 0
                 while i < 15:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
@@ -159,8 +143,8 @@ class colour_detection(object):
                     print(i)
 
                 i = 0
-                while i < 10:
-                    self.robot_controller.set_move_cmd(0.5, 0.0)
+                while i < 20:
+                    self.robot_controller.set_move_cmd(0.25, 0.0)
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
@@ -176,7 +160,7 @@ class colour_detection(object):
 
                 i = 0
                 while i < 15:
-                    self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
+                    self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
@@ -186,21 +170,11 @@ class colour_detection(object):
                 self.robot_controller.publish()
                 self.rate.sleep()
 
-
                 print("SEARCH INITIATED: The target colour is green")
-
-                self.search_colour = "green"
+                self.search_colour = "cyan"
                 self.pillar_detection = True
-
                 #self.ctrl_c = True
-                
-                # turn 90 degrees
-                # detect colour, declare correct colour in self.search_colour
-                # turn back 90 degrees
-                # move forward 0.75m (doesn't have to be exact)
-                # turn 90 degrees anti-clockwise
-                # declare self.pillar_detection = True
-                
+
             while self.pillar_detection == True and not self.ctrl_c:
                 if self.m00 > self.m00_min:
                     # blob detected
