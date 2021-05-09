@@ -55,20 +55,6 @@ class colour_detection(object):
         self.ctrl_c = True
     
     def camera_callback(self, img_data):
-        
-        try:
-            cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
-        except CvBridgeError as e:
-            print(e)
-        
-        height, width, channels = cv_img.shape
-        crop_width = width - 800
-        crop_height = 400
-        crop_x = int((width/2) - (crop_width/2))
-        crop_y = int((height/2) - (crop_height/2))
-
-        crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
-        hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
 
         lowerblue = (115, 224, 100)
         upperblue = (130, 255, 255)
@@ -89,6 +75,20 @@ class colour_detection(object):
         upperyellow = (32,255,255)
         
         while self.pillar_detection:
+
+            try:
+                cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
+            except CvBridgeError as e:
+                print(e)
+            
+            height, width, channels = cv_img.shape
+            crop_width = width - 800
+            crop_height = 400
+            crop_x = int((width/2) - (crop_width/2))
+            crop_y = int((height/2) - (crop_height/2))
+
+            crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+            hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
 
             if self.search_colour == "blue":
                 mask = cv2.inRange(hsv_img, lowerblue, upperblue)
@@ -127,7 +127,7 @@ class colour_detection(object):
                 print("Happy Noises")
 
                 i = 0
-                while i < 25:
+                while i < 15:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
                     self.robot_controller.publish()
                     self.rate.sleep()
@@ -135,7 +135,7 @@ class colour_detection(object):
                     print(i)
 
                 i = 0
-                while i < 25:
+                while i < 5:
                     self.robot_controller.set_move_cmd(0.0, 0.0)
                     self.robot_controller.publish()
                     self.rate.sleep()
@@ -143,8 +143,40 @@ class colour_detection(object):
                     print(i)
 
                 i = 0
-                while i < 25:
+                while i < 15:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 10:
+                    self.robot_controller.set_move_cmd(0.0, 0.0)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 10:
+                    self.robot_controller.set_move_cmd(0.5, 0.0)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 5:
+                    self.robot_controller.set_move_cmd(0.0, 0.0)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 15:
+                    self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
@@ -157,10 +189,10 @@ class colour_detection(object):
 
                 print("SEARCH INITIATED: The target colour is green")
 
-                #self.search_colour = "green"
-                #self.pillar_detection = True
+                self.search_colour = "green"
+                self.pillar_detection = True
 
-                self.ctrl_c = True
+                #self.ctrl_c = True
                 
                 # turn 90 degrees
                 # detect colour, declare correct colour in self.search_colour
