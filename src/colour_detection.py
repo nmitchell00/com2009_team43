@@ -126,6 +126,11 @@ class colour_detection(object):
                     i += 1
                     print(i)
 
+                #----------------------------------------------------------------------------
+                # HERE IS WHERE THE STUFF TO DETECT THE FIRST BOX USING THE CAMERA SHOULD GO
+                #----------------------------------------------------------------------------
+
+
                 i = 0
                 while i < 15:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
@@ -170,7 +175,7 @@ class colour_detection(object):
                 self.robot_controller.publish()
                 self.rate.sleep()
 
-                print("SEARCH INITIATED: The target colour is green")
+                print("SEARCH INITIATED: The target colour is cyan")
                 self.search_colour = "cyan"
                 self.pillar_detection = True
                 #self.ctrl_c = True
