@@ -121,19 +121,46 @@ class colour_detection(object):
         vel_cmd = Twist()
 
         while not self.ctrl_c:
-            while self.pillar_detection == False:
+            while self.pillar_detection == False and not self.ctrl_c:
 
 
                 print("Happy Noises")
-                self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
+
+                i = 0
+                while i < 25:
+                    self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 25:
+                    self.robot_controller.set_move_cmd(0.0, 0.0)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                i = 0
+                while i < 25:
+                    self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    i += 1
+                    print(i)
+
+                self.robot_controller.set_move_cmd(0.0, 0.0)
                 self.robot_controller.publish()
                 self.rate.sleep()
+
 
                 print("SEARCH INITIATED: The target colour is green")
 
                 #self.search_colour = "green"
                 #self.pillar_detection = True
 
+                self.ctrl_c = True
                 
                 # turn 90 degrees
                 # detect colour, declare correct colour in self.search_colour
