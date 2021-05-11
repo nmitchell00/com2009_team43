@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="team43" type="maze_robot.py" name="maze_robot" output="screen">
+  </node>
+
+</launch>

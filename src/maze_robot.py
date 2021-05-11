@@ -11,7 +11,7 @@ from move_tb3 import MoveTB3
 from math import degrees
 from math import radians
 
-class ExploringRobot(object):
+class MazeRobot(object):
 
     def __init__(self):
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -42,20 +42,17 @@ class ExploringRobot(object):
     def main_loop(self):
         vel_cmd = Twist()
         while not self.ctrl_c:
-            if self.object_distance > 0.35:
-                vel_cmd.linear.x = 0.33
-                vel_cmd.angular.z = 0.05
-                print("moving forward")
+            if self.object_distance > 0.4:
+                vel_cmd.linear.x = 0.25
+                vel_cmd.angular.z = 0.0
                 self.pub.publish(vel_cmd)
-            elif self.distance_right > self.distance_left :
+            elif self.distance_left > 0.4:
                 vel_cmd.linear.x = 0.0
-                vel_cmd.angular.z = -0.55
-                print("turning right")
+                vel_cmd.angular.z = 0.55
                 self.pub.publish(vel_cmd)
             else:
                 vel_cmd.linear.x = 0.0
-                vel_cmd.angular.z = 0.55
-                print("turning left")
+                vel_cmd.angular.z = -0.55
                 self.pub.publish(vel_cmd)
 
         #self.turn_left(3)
@@ -66,14 +63,14 @@ class ExploringRobot(object):
         #self.robot_controller = MoveTB3()
 
     def callback_lidar(self, lidar_data):
-        left_arc = lidar_data.ranges[0:50]
-        right_arc = lidar_data.ranges[-50:]
+        left_arc = lidar_data.ranges[0:35]
+        right_arc = lidar_data.ranges[-35:]
         front_arc = np.array(left_arc + right_arc)
         # find the miniumum object distance within the frontal laserscan arc:
         self.object_distance = front_arc.min()
 
-        left_arc = lidar_data.ranges[30:50]
-        right_arc = lidar_data.ranges[50:70]
+        left_arc = lidar_data.ranges[60:70]
+        right_arc = lidar_data.ranges[70:80]
         total_arc1 = np.array(left_arc + right_arc)
         self.distance_left = total_arc1.min()
 
@@ -128,7 +125,8 @@ class ExploringRobot(object):
         i = 0
         for i in range(time):
             vel_cmd = Twist()
-            vel_cmd.linear.x = -0.3
+            vel_cmd.linear.x = -0.05
+            vel_cmd.angular.z = 0.0
 
             self.pub.publish(vel_cmd)
 
@@ -141,7 +139,7 @@ class ExploringRobot(object):
 
 
 if __name__ == '__main__':
-    publisher_instance = ExploringRobot()
+    publisher_instance = MazeRobot()
     try:
         publisher_instance.main_loop()
     except rospy.ROSInterruptException:
