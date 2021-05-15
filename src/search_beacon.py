@@ -121,10 +121,8 @@ class SearchBeacon(object):
             #pillar_found = False
             i = 0
             for i in range(60):
-                if self.object_distance > 0.35:
-                    self.robot_controller.set_move_cmd(0.3, 0.05)
-                if self.object_distance > 0.38:
-                    self.robot_controller.set_move_cmd(0.3, 0.02)
+                if self.object_distance > 0.45:
+                    self.robot_controller.set_move_cmd(0.3, 0.00)
                 elif self.distance_right > self.distance_left:
                     self.robot_controller.set_move_cmd(0.0, -0.55)
                 else:
@@ -139,7 +137,7 @@ class SearchBeacon(object):
                     #pillar_found == True
 
             while self.object_distance > 0.4:
-                self.robot_controller.set_move_cmd(0.1, 0.0)
+                self.robot_controller.set_move_cmd(0.2, 0.0)
                 self.robot_controller.publish()
 
             #preventing buffering errors when stopping
@@ -151,8 +149,8 @@ class SearchBeacon(object):
             self.ctrl_c = True
 
     def callback_lidar(self, lidar_data):
-        left_arc = lidar_data.ranges[0:45]
-        right_arc = lidar_data.ranges[-45:]
+        left_arc = lidar_data.ranges[0:35]
+        right_arc = lidar_data.ranges[-35:]
         front_arc = np.array(left_arc + right_arc)
         # find the miniumum object distance within the frontal laserscan arc:
         self.object_distance = front_arc.min()
@@ -208,7 +206,7 @@ class SearchBeacon(object):
         while finding_pillar == False:
             if self.m00 > self.m00_min:
                 # blob detected
-                if self.cy >= 560-100 and self.cy <= 560+100:
+                if self.cy >= 560-50 and self.cy <= 560+50:
                     if self.move_rate == 'slow':
                         self.move_rate = 'stop'
                 else:
@@ -231,24 +229,28 @@ class SearchBeacon(object):
             self.robot_controller.publish()
             self.rate.sleep()
             i += 1
+        #preventing buffering errors when stopping
+        i = 0
+        for i in range(5):
+            self.robot_controller.set_move_cmd(0.0,0.0)
+            self.rate.sleep()
+            i += 1
 
 
     def explore(self):
         search = False
         while search == False:
-            if self.object_distance > 0.35:
-                self.robot_controller.set_move_cmd(0.3, 0.05)
-            if self.object_distance > 0.38:
-                self.robot_controller.set_move_cmd(0.3, 0.02)
+            if self.object_distance > 0.5:
+                self.robot_controller.set_move_cmd(0.3, 0.00)
             elif self.distance_right > self.distance_left:
-                self.robot_controller.set_move_cmd(0.0, -0.55)
+                self.robot_controller.set_move_cmd(0.0, -0.275)
             else:
-                self.robot_controller.set_move_cmd(0.0, 0.55)
+                self.robot_controller.set_move_cmd(0.0, 0.275)
             self.robot_controller.publish()
             self.rate.sleep()
             if self.m00 > self.m00_min:
                 # blob detected
-                if self.cy >= 560-100 and self.cy <= 560+100:
+                if self.cy >= 0 and self.cy <= 1120:
                     search = True
         #preventing buffering errors when stopping
         i = 0
