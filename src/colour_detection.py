@@ -36,7 +36,7 @@ class colour_detection(object):
         rospy.on_shutdown(self.shutdown_ops)
 
         self.rate = rospy.Rate(5)
-        
+
         self.m00 = 0
         self.m00_min = 10000
 
@@ -44,13 +44,13 @@ class colour_detection(object):
         self.robot_controller.stop()
         cv2.destroyAllWindows()
         self.ctrl_c = True
-    
+
     def camera_callback(self, img_data):
         try:
             cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
         except CvBridgeError as e:
             print(e)
-        
+
         height, width, channels = cv_img.shape
         crop_width = width - 800
         crop_height = 400
@@ -91,7 +91,7 @@ class colour_detection(object):
         if self.search_colour == "yellow":
             mask = cv2.inRange(hsv_img, loweryellow, upperyellow)
 
-        
+
         #mask = cv2.inRange(hsv_img, lowercyan, uppercyan) + cv2.inRange(hsv_img, lowerred, upperred) + cv2.inRange(hsv_img, lowergreen, uppergreen) + cv2.inRange(hsv_img, lowerblue, upperblue)
         res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
 
@@ -101,22 +101,20 @@ class colour_detection(object):
 
         if self.m00 > self.m00_min:
             cv2.circle(crop_img, (int(self.cy), 200), 10, (0, 0, 255), 2)
-        
+
         cv2.imshow('cropped image', crop_img)
         cv2.waitKey(1)
 
     def main(self):
         while not self.ctrl_c:
             while self.pillar_detection == False:
-                print("Happy Noises")
-                
+
                 i = 0
                 while i < 15:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 i = 0
                 while i < 5:
@@ -124,11 +122,26 @@ class colour_detection(object):
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
-                #----------------------------------------------------------------------------
-                # HERE IS WHERE THE STUFF TO DETECT THE FIRST BOX USING THE CAMERA SHOULD GO
-                #----------------------------------------------------------------------------
+
+                colours = ["blue","red","cyan","purple","yellow","green"]
+                i = 0
+                colour_found = False
+                while colour_found == False:
+                    self.search_colour = colours[i]
+                    print("checking for "+ self.search_colour)
+                    self.robot_controller.set_move_cmd(0.0, 0.0)
+                    self.robot_controller.publish()
+                    self.rate.sleep()
+                    if self.m00 > self.m00_min:
+                        # blob detected
+                        if self.cy >= 560-100 and self.cy <= 560+100:
+                            colour_found = True
+                            print("SEARCH INITIATED: The target colour is " + self.search_colour + ".")
+                    else:
+                        i += 1
+
+
 
 
                 i = 0
@@ -137,7 +150,6 @@ class colour_detection(object):
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 i = 0
                 while i < 10:
@@ -145,7 +157,6 @@ class colour_detection(object):
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 i = 0
                 while i < 20:
@@ -153,7 +164,6 @@ class colour_detection(object):
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 i = 0
                 while i < 5:
@@ -161,24 +171,19 @@ class colour_detection(object):
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 i = 0
-                while i < 15:
+                while i < 25:
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_reverse)
                     self.robot_controller.publish()
                     self.rate.sleep()
                     i += 1
-                    print(i)
 
                 self.robot_controller.set_move_cmd(0.0, 0.0)
                 self.robot_controller.publish()
                 self.rate.sleep()
 
-                print("SEARCH INITIATED: The target colour is cyan")
-                self.search_colour = "cyan"
                 self.pillar_detection = True
-                #self.ctrl_c = True
 
             while self.pillar_detection == True and not self.ctrl_c:
                 if self.m00 > self.m00_min:
@@ -191,24 +196,21 @@ class colour_detection(object):
                 else:
                     self.move_rate = 'fast'
 
-                    
+
                 if self.move_rate == 'fast':
-                    print("MOVING FAST: I can't see anything at the moment, scanning the area...")
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_fast)
                 elif self.move_rate == 'slow':
-                    print("MOVING SLOW: A blob of colour of size {:.0f} pixels is in view at y-position: {:.0f} pixels.".format(self.m00, self.cy))
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_slow)
                 elif self.move_rate == 'stop':
                     print("SEARCH COMPLETE: The robot is now facing the target pillar.")
                     self.robot_controller.set_move_cmd(0.0, 0.0)
                     self.ctrl_c = True
                 else:
-                    print("MOVING SLOW: A blob of colour of size {:.0f} pixels is in view at y-position: {:.0f} pixels.".format(self.m00, self.cy))
                     self.robot_controller.set_move_cmd(0.0, self.turn_vel_slow)
-                
+
                 self.robot_controller.publish()
                 self.rate.sleep()
-            
+
 if __name__ == '__main__':
     search_ob = colour_detection()
     try:

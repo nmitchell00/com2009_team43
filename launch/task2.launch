@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="team43" type="colour_detection.py" name="colour_detection" output="screen">
+  </node>
+
+</launch>
