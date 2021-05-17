@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="team43" type="search_beacon.py" name="SearchBeacon" output="screen">
+  </node>
+
+</launch>
