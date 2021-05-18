@@ -42,15 +42,9 @@ class ExploringRobot(object):
     def main_loop(self):
         vel_cmd = Twist()
         while not self.ctrl_c:
-<<<<<<< HEAD
-            if self.object_distance > 0.35:
-                vel_cmd.linear.x = 0.33
-                vel_cmd.angular.z = 0.05
-=======
             if self.object_distance > 0.38:
                 vel_cmd.linear.x = 0.3
                 vel_cmd.angular.z = 0.02
->>>>>>> 2abae22989dafcfc356d9249b2360f8ae24a891a
                 print("moving forward")
                 self.pub.publish(vel_cmd)
             elif self.distance_right > self.distance_left :

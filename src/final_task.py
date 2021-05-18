@@ -32,6 +32,7 @@ class SearchBeacon(object):
         self.object_distance = 1
         self.distance_right = 1
         self.distance_left = 1
+        self.thin_front = 1
 
         self.cvbridge_interface = CvBridge()
 
@@ -51,7 +52,7 @@ class SearchBeacon(object):
         self.rate = rospy.Rate(5)
 
         self.m00 = 0
-        self.m00_min = 10000
+        self.m00_min = 100000
 
         self.startup = True
 
@@ -163,7 +164,7 @@ class SearchBeacon(object):
             self.scan_colour()
                     #pillar_found == True
 
-            while self.object_distance > 0.4:
+            while self.thin_front > 0.4:
 
                 self.robot_controller.set_move_cmd(0.2, 0.0)
                 self.robot_controller.publish()
@@ -181,7 +182,6 @@ class SearchBeacon(object):
         left_arc = lidar_data.ranges[0:30]
         right_arc = lidar_data.ranges[-30:]
         front_arc = np.array(left_arc + right_arc)
-        # find the miniumum object distance within the frontal laserscan arc:
         self.object_distance = front_arc.min()
 
         left_arc = lidar_data.ranges[40:50]
@@ -193,6 +193,11 @@ class SearchBeacon(object):
         right_arc = lidar_data.ranges[300:320]
         total_arc2 = np.array(left_arc + right_arc)
         self.distance_right = total_arc2.min()
+
+        left_arc = lidar_data.ranges[0:10]
+        right_arc = lidar_data.ranges[-10:]
+        front_arc2 = np.array(left_arc + right_arc)
+        self.thin_front = front_arc2.min()
 
 
     def detect_colour(self):
@@ -259,7 +264,7 @@ class SearchBeacon(object):
             i += 1
         #preventing buffering errors when stopping
         i = 0
-        for i in range(5):
+        for i in range(10):
             self.robot_controller.set_move_cmd(0.0,0.0)
             self.rate.sleep()
             i += 1
